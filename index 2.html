@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Familienrepublik</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0f0f14;
+  --surface: #17171f;
+  --surface2: #1e1e28;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e4dc;
+  --text2: #9990a8;
+  --gold: #c9a84c;
+  --gold-dim: rgba(201,168,76,0.15);
+  --gold-glow: rgba(201,168,76,0.3);
+  --red: #c0392b;
+  --red-dim: rgba(192,57,43,0.15);
+  --green: #27ae60;
+  --green-dim: rgba(39,174,96,0.15);
+  --blue: #2980b9;
+  --blue-dim: rgba(41,128,185,0.15);
+  --accent: #c9a84c;
+  --radius: 6px;
+  --font-display: 'Playfair Display', serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-body: 'IBM Plex Sans', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ─── LOGIN SCREEN ─── */
+#login-screen{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;
+  padding:1.5rem;
+}
+.login-box{
+  width:100%;max-width:380px;
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:12px;
+  padding:2.5rem 2rem;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.login-box::before{
+  content:'';position:absolute;
+  top:-60px;left:50%;transform:translateX(-50%);
+  width:200px;height:200px;
+  background:radial-gradient(circle, var(--gold-glow) 0%, transparent 70%);
+  pointer-events:none;
+}
+.login-seal{
+  font-size:3rem;margin-bottom:1rem;
+  display:block;position:relative;z-index:1;
+  animation:pulse 3s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
+.login-title{
+  font-family:var(--font-display);
+  font-size:1.8rem;font-weight:900;
+  color:var(--text);margin-bottom:0.3rem;
+}
+.login-title span{color:var(--gold);}
+.login-sub{
+  font-family:var(--font-mono);
+  font-size:0.62rem;letter-spacing:2px;
+  color:var(--text2);text-transform:uppercase;
+  margin-bottom:2rem;
+}
+.member-grid{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:0.6rem;margin-bottom:1.5rem;
+  max-height:300px;overflow-y:auto;
+}
+.member-tile{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:0.8rem 0.5rem;
+  cursor:pointer;
+  transition:all 0.2s;
+  text-align:center;
+}
+.member-tile:hover,.member-tile.selected{
+  border-color:var(--gold);
+  background:var(--gold-dim);
+}
+.member-tile .emoji{font-size:1.6rem;display:block;margin-bottom:0.3rem;}
+.member-tile .mname{font-size:0.78rem;font-weight:600;color:var(--text);}
+.member-tile .mrole{font-size:0.6rem;color:var(--text2);font-family:var(--font-mono);}
+.pin-row{
+  display:flex;gap:0.5rem;justify-content:center;
+  margin-bottom:1rem;
+}
+.pin-dot{
+  width:14px;height:14px;
+  border-radius:50%;
+  border:2px solid var(--border2);
+  background:transparent;
+  transition:all 0.2s;
+}
+.pin-dot.filled{background:var(--gold);border-color:var(--gold);}
+.pin-pad{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:0.5rem;margin-bottom:1rem;
+}
+.pin-btn{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  color:var(--text);
+  font-family:var(--font-mono);
+  font-size:1.2rem;font-weight:600;
+  padding:0.9rem;
+  cursor:pointer;
+  transition:all 0.15s;
+}
+.pin-btn:active{background:var(--gold-dim);border-color:var(--gold);transform:scale(0.95);}
+.pin-error{color:var(--red);font-size:0.75rem;font-family:var(--font-mono);min-height:1.2rem;}
+
+/* ─── APP SHELL ─── */
+#app{display:none;flex-direction:column;min-height:100vh;}
+
+/* ─── TOPBAR ─── */
+.topbar{
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:0.8rem 1rem;
+  display:flex;align-items:center;gap:0.8rem;
+  position:sticky;top:0;z-index:100;
+}
+.topbar-logo{
+  font-family:var(--font-display);
+  font-size:1.1rem;font-weight:900;
+  color:var(--text);flex:1;
+}
+.topbar-logo span{color:var(--gold);}
+.topbar-user{
+  display:flex;align-items:center;gap:0.5rem;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:0.3rem 0.7rem 0.3rem 0.4rem;
+  cursor:pointer;
+}
+.topbar-user .emoji{font-size:1.1rem;}
+.topbar-user .uname{font-size:0.72rem;font-weight:600;color:var(--text);}
+.topbar-user .urole{font-size:0.58rem;color:var(--gold);font-family:var(--font-mono);}
+.online-dot{
+  width:7px;height:7px;
+  background:var(--green);
+  border-radius:50%;
+  box-shadow:0 0 6px var(--green);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:100;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:0.6rem 0.3rem;
+  cursor:pointer;
+  transition:all 0.2s;
+  gap:0.2rem;
+  position:relative;
+}
+.nav-item.active .nav-icon{color:var(--gold);}
+.nav-item.active::after{
+  content:'';
+  position:absolute;top:0;left:20%;right:20%;height:2px;
+  background:var(--gold);border-radius:0 0 2px 2px;
+}
+.nav-item.locked{opacity:0.3;pointer-events:none;}
+.nav-icon{font-size:1.2rem;transition:all 0.2s;color:var(--text2);}
+.nav-label{font-family:var(--font-mono);font-size:0.55rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;}
+.nav-item.active .nav-label{color:var(--gold);}
+
+/* ─── MAIN CONTENT ─── */
+.main-content{
+  flex:1;
+  padding:1.2rem 1rem 6rem;
+  max-width:700px;
+  margin:0 auto;
+  width:100%;
+}
+
+/* ─── SECTIONS ─── */
+.section{display:none;}
+.section.active{display:block;}
+
+/* ─── PAGE HEADER ─── */
+.page-header{margin-bottom:1.5rem;}
+.page-title{
+  font-family:var(--font-display);
+  font-size:1.6rem;font-weight:900;
+  color:var(--text);
+  display:flex;align-items:center;gap:0.5rem;
+}
+.page-sub{
+  font-family:var(--font-mono);
+  font-size:0.62rem;color:var(--text2);
+  text-transform:uppercase;letter-spacing:2px;
+  margin-top:0.3rem;
+}
+
+/* ─── CARDS ─── */
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.2rem;
+  margin-bottom:0.8rem;
+  transition:border-color 0.2s;
+}
+.card:hover{border-color:var(--border2);}
+.card.gold{border-left:3px solid var(--gold);}
+.card.red{border-left:3px solid var(--red);}
+.card.green{border-left:3px solid var(--green);}
+.card.blue{border-left:3px solid var(--blue);}
+.card-title{
+  font-family:var(--font-display);
+  font-size:1rem;font-weight:700;
+  margin-bottom:0.4rem;
+}
+
+/* ─── STATS ─── */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:0.6rem;margin-bottom:1.2rem;}
+.stat-box{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:0.9rem 0.7rem;
+  text-align:center;
+}
+.stat-num{
+  font-family:var(--font-display);
+  font-size:1.8rem;font-weight:900;
+  color:var(--gold);line-height:1;
+}
+.stat-label{
+  font-family:var(--font-mono);
+  font-size:0.58rem;color:var(--text2);
+  text-transform:uppercase;letter-spacing:1px;
+  margin-top:0.2rem;
+}
+
+/* ─── BADGES ─── */
+.badge{
+  display:inline-block;
+  font-family:var(--font-mono);
+  font-size:0.58rem;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:0.15rem 0.45rem;border-radius:3px;
+}
+.badge-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-glow);}
+.badge-red{background:var(--red-dim);color:#e74c3c;border:1px solid rgba(192,57,43,0.3);}
+.badge-green{background:var(--green-dim);color:var(--green);border:1px solid rgba(39,174,96,0.3);}
+.badge-blue{background:var(--blue-dim);color:var(--blue);border:1px solid rgba(41,128,185,0.3);}
+.badge-gray{background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border);}
+.badge-purple{background:rgba(155,89,182,0.15);color:#9b59b6;border:1px solid rgba(155,89,182,0.3);}
+
+/* ─── BUTTONS ─── */
+.btn{
+  font-family:var(--font-mono);
+  font-size:0.68rem;font-weight:600;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:0.65rem 1.2rem;
+  border:none;border-radius:var(--radius);
+  cursor:pointer;transition:all 0.2s;
+  display:inline-flex;align-items:center;gap:0.4rem;
+}
+.btn-gold{background:var(--gold);color:#0f0f14;}
+.btn-gold:hover{background:#e0b85a;}
+.btn-primary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+.btn-primary:hover{border-color:var(--gold);color:var(--gold);}
+.btn-red{background:var(--red);color:white;}
+.btn-red:hover{background:#e74c3c;}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border);}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2);}
+.btn-sm{padding:0.4rem 0.8rem;font-size:0.6rem;}
+.btn:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-row{display:flex;gap:0.6rem;flex-wrap:wrap;margin-top:1rem;}
+
+/* ─── FORM ─── */
+.field{margin-bottom:1rem;}
+.field-label{
+  font-family:var(--font-mono);
+  font-size:0.6rem;text-transform:uppercase;
+  letter-spacing:1.5px;color:var(--text2);
+  margin-bottom:0.4rem;display:block;
+}
+input[type=text],input[type=number],textarea,select{
+  width:100%;
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:0.65rem 0.9rem;
+  font-family:var(--font-body);
+  font-size:0.88rem;color:var(--text);
+  outline:none;transition:border-color 0.2s;
+  -webkit-appearance:none;
+}
+input[type=text]:focus,input[type=number]:focus,textarea:focus,select:focus{
+  border-color:var(--gold);
+}
+input[type=color]{
+  width:50px;height:36px;
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  cursor:pointer;padding:2px;
+}
+textarea{resize:vertical;min-height:70px;}
+select option{background:var(--surface2);color:var(--text);}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+@media(max-width:400px){.grid-2{grid-template-columns:1fr;}}
+
+/* ─── MEMBER ROW ─── */
+.member-row{
+  display:flex;align-items:center;gap:0.8rem;
+  padding:0.8rem 0;
+  border-bottom:1px solid var(--border);
+}
+.member-row:last-child{border-bottom:none;}
+.avatar{
+  width:38px;height:38px;
+  background:var(--surface2);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;flex-shrink:0;
+  border:1px solid var(--border);
+}
+.m-name{font-weight:600;font-size:0.9rem;}
+.m-role{font-family:var(--font-mono);font-size:0.58rem;color:var(--text2);margin-top:0.1rem;}
+.score-tag{
+  display:inline-flex;align-items:center;gap:0.2rem;
+  background:var(--gold-dim);border:1px solid var(--gold-glow);
+  border-radius:4px;padding:0.15rem 0.4rem;
+  font-family:var(--font-mono);font-size:0.65rem;
+  color:var(--gold);font-weight:600;
+  white-space:nowrap;
+}
+
+/* ─── VOTE OPTION ─── */
+.vote-opt{
+  background:var(--surface2);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  padding:0.8rem 1rem;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;align-items:center;gap:0.8rem;
+  margin-bottom:0.5rem;
+}
+.vote-opt:hover{border-color:var(--gold-glow);}
+.vote-opt.voted{border-color:var(--gold);background:var(--gold-dim);}
+.vradio{
+  width:16px;height:16px;
+  border:2px solid var(--border2);
+  border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all 0.2s;
+}
+.vote-opt.voted .vradio{border-color:var(--gold);}
+.vote-opt.voted .vradio::after{
+  content:'';width:8px;height:8px;
+  background:var(--gold);border-radius:50%;
+}
+.progress-bar{
+  height:4px;background:var(--border);
+  border-radius:2px;margin-top:0.4rem;overflow:hidden;
+}
+.progress-fill{height:100%;border-radius:2px;transition:width 0.6s ease;}
+
+/* ─── PRANGER ─── */
+.pranger-card{
+  background:var(--surface);
+  border:1px solid rgba(192,57,43,0.3);
+  border-left:3px solid var(--red);
+  border-radius:var(--radius);
+  padding:1.2rem;margin-bottom:0.8rem;
+  position:relative;
+}
+.pranger-card.amnestied{
+  border-color:rgba(39,174,96,0.3);
+  border-left-color:var(--green);
+  opacity:0.6;
+}
+
+/* ─── TIMELINE ─── */
+.timeline-item{
+  display:flex;gap:0.8rem;
+  padding-bottom:1rem;position:relative;
+}
+.timeline-item::before{
+  content:'';position:absolute;
+  left:14px;top:28px;bottom:0;
+  width:1px;background:var(--border);
+}
+.timeline-item:last-child::before{display:none;}
+.t-dot{
+  width:28px;height:28px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.75rem;flex-shrink:0;z-index:1;
+}
+.t-title{font-size:0.85rem;font-weight:600;}
+.t-sub{font-size:0.72rem;color:var(--text2);margin-top:0.1rem;}
+
+/* ─── LOCKED OVERLAY ─── */
+.locked-section{
+  text-align:center;padding:3rem 2rem;
+  color:var(--text2);
+}
+.lock-icon{font-size:3rem;margin-bottom:1rem;opacity:0.5;}
+.lock-title{font-family:var(--font-display);font-size:1.2rem;margin-bottom:0.5rem;color:var(--text);}
+.lock-sub{font-size:0.82rem;line-height:1.7;}
+
+/* ─── ADMIN PANEL ─── */
+.admin-section-title{
+  font-family:var(--font-mono);
+  font-size:0.62rem;text-transform:uppercase;
+  letter-spacing:2px;color:var(--gold);
+  padding:0.5rem 0;margin-bottom:0.8rem;
+  border-bottom:1px solid var(--gold-dim);
+}
+.color-row{display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;margin-bottom:0.8rem;}
+.color-label{font-size:0.78rem;color:var(--text2);min-width:120px;}
+.permission-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0.6rem 0;border-bottom:1px solid var(--border);
+  font-size:0.85rem;
+}
+
+/* ─── TOGGLE ─── */
+.toggle{
+  position:relative;width:40px;height:22px;flex-shrink:0;
+}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{
+  position:absolute;cursor:pointer;
+  top:0;left:0;right:0;bottom:0;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:11px;transition:0.3s;
+}
+.toggle-slider::before{
+  content:'';position:absolute;
+  height:16px;width:16px;
+  left:2px;bottom:2px;
+  background:var(--text2);border-radius:50%;
+  transition:0.3s;
+}
+input:checked + .toggle-slider{background:var(--gold);border-color:var(--gold);}
+input:checked + .toggle-slider::before{transform:translateX(18px);background:#0f0f14;}
+
+/* ─── NOTIFICATION TOAST ─── */
+#toast{
+  position:fixed;bottom:5.5rem;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface);border:1px solid var(--border2);
+  border-left:3px solid var(--gold);
+  border-radius:var(--radius);
+  padding:0.7rem 1.2rem;
+  font-family:var(--font-mono);font-size:0.72rem;
+  color:var(--text);
+  white-space:nowrap;
+  z-index:999;
+  opacity:0;transition:all 0.3s;
+  pointer-events:none;
+  max-width:90vw;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ─── LOADING ─── */
+#loading-overlay{
+  position:fixed;inset:0;
+  background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:2000;flex-direction:column;gap:1rem;
+}
+.spinner{
+  width:40px;height:40px;
+  border:3px solid var(--border);
+  border-top-color:var(--gold);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-family:var(--font-mono);font-size:0.7rem;color:var(--text2);letter-spacing:2px;}
+
+/* ─── PARTY CARD ─── */
+.party-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.1rem;margin-bottom:0.7rem;
+  overflow:hidden;position:relative;
+}
+.party-stripe{position:absolute;top:0;left:0;right:0;height:3px;}
+.party-name{font-family:var(--font-display);font-size:1rem;font-weight:700;margin-bottom:0.2rem;}
+.party-slogan{font-size:0.75rem;color:var(--text2);font-style:italic;margin-bottom:0.6rem;}
+
+/* ─── RESPONSIVE TABLE ─── */
+.rtable{width:100%;border-collapse:collapse;font-size:0.82rem;}
+.rtable th{
+  font-family:var(--font-mono);font-size:0.58rem;
+  text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--text2);text-align:left;
+  padding:0.4rem 0.5rem;
+  border-bottom:1px solid var(--border2);
+}
+.rtable td{padding:0.6rem 0.5rem;border-bottom:1px solid var(--border);}
+.rtable tr:last-child td{border-bottom:none;}
+
+/* ─── DIVIDER ─── */
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0;}
+
+/* ─── EMPTY STATE ─── */
+.empty{
+  text-align:center;padding:2.5rem 1rem;
+  color:var(--text2);font-size:0.85rem;
+}
+.empty-icon{font-size:2.5rem;display:block;margin-bottom:0.7rem;opacity:0.4;}
+
+/* ─── OFFICE PERMISSION TAG ─── */
+.perm-tag{
+  display:inline-flex;align-items:center;gap:0.3rem;
+  background:var(--blue-dim);border:1px solid rgba(41,128,185,0.25);
+  border-radius:3px;padding:0.12rem 0.35rem;
+  font-family:var(--font-mono);font-size:0.55rem;
+  color:var(--blue);margin:0.1rem;
+}
+
+/* ─── VOTE RESULT BAR ─── */
+.result-row{display:flex;align-items:center;gap:0.7rem;margin-bottom:0.5rem;}
+.result-label{min-width:80px;font-size:0.8rem;color:var(--text);}
+.result-track{flex:1;background:var(--border);height:18px;border-radius:3px;overflow:hidden;}
+.result-fill{
+  height:100%;display:flex;align-items:center;
+  padding-left:0.4rem;
+  font-family:var(--font-mono);font-size:0.58rem;font-weight:600;
+  color:rgba(0,0,0,0.8);min-width:24px;
+  transition:width 0.7s ease;
+}
+.result-count{font-family:var(--font-mono);font-size:0.7rem;color:var(--text2);min-width:20px;text-align:right;}
+
+/* ─── REFERENDUM BANNER ─── */
+.referendum-banner{
+  background:linear-gradient(135deg,rgba(201,168,76,0.1),rgba(201,168,76,0.05));
+  border:1px solid var(--gold-glow);
+  border-radius:var(--radius);
+  padding:1rem;margin-bottom:1.2rem;
+  text-align:center;
+}
+.ref-emoji{font-size:2rem;display:block;margin-bottom:0.4rem;}
+.ref-title{font-family:var(--font-display);font-size:1.1rem;font-weight:700;}
+.ref-type{font-family:var(--font-mono);font-size:0.6rem;color:var(--gold);letter-spacing:2px;text-transform:uppercase;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text">VERBINDE MIT FIREBASE…</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none;">
+  <div class="login-box">
+    <span class="login-seal">🏛️</span>
+    <div class="login-title">Familien<span>republik</span></div>
+    <div class="login-sub">Melde dich an um teilzunehmen</div>
+
+    <div id="step-select">
+      <div id="member-grid" class="member-grid"></div>
+      <p style="font-size:0.72rem;color:var(--text2);margin-top:0.5rem;">Wer bist du?</p>
+    </div>
+
+    <div id="step-pin" style="display:none;">
+      <div style="margin-bottom:1rem;">
+        <span id="sel-emoji" style="font-size:2rem;"></span>
+        <div style="font-weight:600;margin-top:0.3rem;" id="sel-name"></div>
+        <div style="font-size:0.65rem;color:var(--text2);font-family:var(--font-mono);" id="sel-role"></div>
+      </div>
+      <div class="pin-row" id="pin-dots"></div>
+      <div class="pin-pad" id="pin-pad"></div>
+      <div class="pin-error" id="pin-error"></div>
+      <button class="btn btn-ghost btn-sm" onclick="backToSelect()" style="width:100%;margin-top:0.3rem;">← Zurück</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- APP -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">Familien<span>republik</span></div>
+    <div class="online-dot" title="Echtzeit verbunden"></div>
+    <div class="topbar-user" onclick="logout()">
+      <span class="emoji" id="top-emoji">👤</span>
+      <div>
+        <div class="uname" id="top-name">—</div>
+        <div class="urole" id="top-role">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="main-content">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div id="sec-dashboard" class="section active">
+      <div class="page-header">
+        <div class="page-title">🏛️ Dashboard</div>
+        <div class="page-sub" id="dash-greeting">Willkommen</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-num" id="d-members">—</div>
+          <div class="stat-label">Bürger</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="d-votes">—</div>
+          <div class="stat-label">Abstimmungen</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="d-pranger">—</div>
+          <div class="stat-label">Prangerf.</div>
+        </div>
+      </div>
+      <div id="dash-myvotes"></div>
+      <div id="dash-activity"></div>
+    </div>
+
+    <!-- ════ MITGLIEDER ════ -->
+    <div id="sec-mitglieder" class="section">
+      <div class="page-header">
+        <div class="page-title">👥 Mitglieder</div>
+        <div class="page-sub">Staatsbürgerregister</div>
+      </div>
+      <div id="members-list" class="card"></div>
+      <div id="member-add-area"></div>
+    </div>
+
+    <!-- ════ PARTEIEN ════ -->
+    <div id="sec-parteien" class="section">
+      <div class="page-header">
+        <div class="page-title">🎭 Parteien</div>
+        <div class="page-sub">Politische Formationen</div>
+      </div>
+      <div id="parties-list"></div>
+      <div id="party-add-area"></div>
+    </div>
+
+    <!-- ════ ABSTIMMUNG ════ -->
+    <div id="sec-abstimmung" class="section">
+      <div class="page-header">
+        <div class="page-title">🗳️ Abstimmungen</div>
+        <div class="page-sub">Volksabstimmungen · Beschlüsse</div>
+      </div>
+      <div id="vote-active"></div>
+      <div id="vote-create-area"></div>
+      <hr class="divider">
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.8rem;">Archiv</div>
+      <div id="vote-archive"></div>
+    </div>
+
+    <!-- ════ PRANGER ════ -->
+    <div id="sec-pranger" class="section">
+      <div class="page-header">
+        <div class="page-title">⚠️ Pranger</div>
+        <div class="page-sub">Anklagen · Sanktionen · Amnestien</div>
+      </div>
+      <div id="pranger-list"></div>
+      <div id="pranger-add-area"></div>
+    </div>
+
+    <!-- ════ PROTOKOLL ════ -->
+    <div id="sec-protokoll" class="section">
+      <div class="page-header">
+        <div class="page-title">📋 Protokoll</div>
+        <div class="page-sub">Punkte · Aktivitäten · Beschlüsse</div>
+      </div>
+      <div id="points-table-wrap"></div>
+      <div id="points-add-area"></div>
+      <hr class="divider">
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.8rem;">Aktivitätenlog</div>
+      <div id="activity-log"></div>
+    </div>
+
+    <!-- ════ ADMIN ════ -->
+    <div id="sec-admin" class="section">
+      <div class="page-header">
+        <div class="page-title">⚙️ Administration</div>
+        <div class="page-sub">Nur für Administratoren</div>
+      </div>
+      <div id="admin-content"></div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav" id="bottom-nav">
+    <div class="nav-item active" onclick="showSection('dashboard',this)">
+      <div class="nav-icon">🏛️</div><div class="nav-label">Home</div>
+    </div>
+    <div class="nav-item" id="nav-mitglieder" onclick="showSection('mitglieder',this)">
+      <div class="nav-icon">👥</div><div class="nav-label">Mitglieder</div>
+    </div>
+    <div class="nav-item" id="nav-parteien" onclick="showSection('parteien',this)">
+      <div class="nav-icon">🎭</div><div class="nav-label">Parteien</div>
+    </div>
+    <div class="nav-item" id="nav-abstimmung" onclick="showSection('abstimmung',this)">
+      <div class="nav-icon">🗳️</div><div class="nav-label">Wahl</div>
+    </div>
+    <div class="nav-item" id="nav-pranger" onclick="showSection('pranger',this)">
+      <div class="nav-icon">⚠️</div><div class="nav-label">Pranger</div>
+    </div>
+    <div class="nav-item" id="nav-protokoll" onclick="showSection('protokoll',this)">
+      <div class="nav-icon">📋</div><div class="nav-label">Protokoll</div>
+    </div>
+    <div class="nav-item" id="nav-admin" style="display:none;" onclick="showSection('admin',this)">
+      <div class="nav-icon">⚙️</div><div class="nav-label">Admin</div>
+    </div>
+  </div>
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- FIREBASE + APP LOGIC -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<script>
+// ── Firebase REST API (bypasses domain restrictions) ──────
+const DB_URL = "https://familienrepublik-default-rtdb.europe-west1.firebasedatabase.app";
+
+async function dbGet(path) {
+  const r = await fetch(`${DB_URL}/${path}.json`);
+  const val = await r.json();
+  return { exists: () => val !== null && val !== undefined, val: () => val };
+}
+async function dbSet(path, value) {
+  await fetch(`${DB_URL}/${path}.json`, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(value)
+  });
+}
+async function dbUpdate(path, value) {
+  await fetch(`${DB_URL}/${path}.json`, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(value)
+  });
+}
+async function dbRemove(path) {
+  await fetch(`${DB_URL}/${path}.json`, { method: 'DELETE' });
+}
+async function dbPush(path, value) {
+  const r = await fetch(`${DB_URL}/${path}.json`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(value)
+  });
+  const data = await r.json();
+  return data.name;
+}
+// Smart polling - only triggers callback when data actually changes
+function dbListen(path, callback) {
+  let lastHash = null;
+  const poll = async () => {
+    try {
+      const r = await fetch(`${DB_URL}/${path}.json`);
+      const val = await r.json();
+      const hash = JSON.stringify(val);
+      if (hash !== lastHash) {
+        lastHash = hash;
+        callback(val || {});
+      }
+    } catch(e) { console.warn('DB poll error:', e); }
+  };
+  poll();
+  setInterval(poll, 3000);
+}
+
+// ── Firebase REST API ready ──────────────────────────────
+
+// ── ADMIN PIN (hardcoded, only Flurin knows) ─────────────
+const ADMIN_PIN = "1234"; // ← Ändere diesen PIN!
+const ADMIN_ID = "__admin__";
+
+// ── State ────────────────────────────────────────────────
+let currentUser = null; // { id, name, emoji, role, pin, points, isAdmin }
+let appState = {}; // full firebase snapshot
+let pinBuffer = "";
+let selectedMemberId = null;
+
+// ── Default offices & permissions ───────────────────────
+const DEFAULT_OFFICES = {
+  "Haushaltspräsident/in": {
+    color:"#c9a84c",
+    permissions:["abstimmung_create","pranger_amnesty","protokoll_points","mitglieder_view"]
+  },
+  "Finanzminister/in": {
+    color:"#27ae60",
+    permissions:["protokoll_points","protokoll_view"]
+  },
+  "Kulturminister/in": {
+    color:"#2980b9",
+    permissions:["parteien_create"]
+  },
+  "Ordnungsminister/in": {
+    color:"#9b59b6",
+    permissions:["pranger_create","pranger_amnesty"]
+  },
+  "Aussenminister/in": {
+    color:"#e67e22",
+    permissions:["parteien_create"]
+  },
+  "Bürger/in": {
+    color:"#7f8c8d",
+    permissions:["abstimmung_vote"]
+  },
+  "Beobachter (unter 5)": {
+    color:"#bdc3c7",
+    permissions:[]
+  }
+};
+
+// All possible permissions (label → key)
+const ALL_PERMISSIONS = {
+  "abstimmung_vote":     "Abstimmen",
+  "abstimmung_create":   "Abstimmung erstellen",
+  "abstimmung_close":    "Abstimmung schliessen",
+  "pranger_create":      "Anklage einreichen",
+  "pranger_amnesty":     "Amnestie erteilen",
+  "parteien_create":     "Partei gründen",
+  "parteien_delete":     "Partei auflösen",
+  "protokoll_view":      "Protokoll einsehen",
+  "protokoll_points":    "Punkte vergeben",
+  "mitglieder_view":     "Mitglieder verwalten",
+  "mitglieder_edit":     "Mitglieder bearbeiten",
+};
+
+// ── Init ─────────────────────────────────────────────────
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+}
+
+async function init() {
+  const loadingEl = document.getElementById('loading-overlay');
+  const loadingText = loadingEl.querySelector('.loading-text');
+  loadingEl.style.display = 'flex';
+
+  let firebaseOk = false;
+
+  try {
+    loadingText.textContent = 'VERBINDE MIT FIREBASE…';
+
+    // Load initial data
+    const initData = await Promise.race([
+      fetch(`${DB_URL}/.json`).then(r => r.json()),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000))
+    ]);
+
+    appState = initData || {};
+
+    // Set defaults if missing
+    if (!appState.offices) await dbSet('offices', DEFAULT_OFFICES);
+    if (!appState.settings) await dbSet('settings', {
+      appName: "Familienrepublik",
+      theme: { gold:"#c9a84c", bg:"#0f0f14", surface:"#17171f", accent:"#c9a84c" },
+    });
+
+    // Start live polling
+    dbListen('', data => {
+      appState = data || {};
+      applyTheme();
+      if(currentUser) renderAllSafe();
+      else renderMemberGrid();
+    });
+
+    firebaseOk = true;
+  } catch(e) {
+    console.warn('Firebase nicht erreichbar, Offline-Modus:', e.message);
+    try {
+      const saved = localStorage.getItem('fr_offline_state');
+      if(saved) appState = JSON.parse(saved);
+    } catch(_) {}
+  }
+
+  loadingEl.style.display = 'none';
+
+  // Show offline warning if needed
+  if(!firebaseOk) {
+    const warn = document.createElement('div');
+    warn.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c0392b;color:white;text-align:center;padding:0.4rem;font-family:IBM Plex Mono,monospace;font-size:0.65rem;z-index:500;letter-spacing:1px;';
+    warn.textContent = '⚠ OFFLINE — Änderungen werden nicht synchronisiert';
+    document.body.appendChild(warn);
+  }
+
+  // Check session
+  const saved = sessionStorage.getItem('fr_user');
+  if(saved) {
+    currentUser = JSON.parse(saved);
+    startApp();
+  } else {
+    showLogin();
+  }
+}
+
+// ── Theme application ─────────────────────────────────────
+function applyTheme() {
+  const t = appState?.settings?.theme;
+  if(!t) return;
+  const root = document.documentElement;
+  if(t.gold) root.style.setProperty('--gold', t.gold);
+  if(t.bg) root.style.setProperty('--bg', t.bg);
+  if(t.surface) root.style.setProperty('--surface', t.surface);
+}
+
+// ── LOGIN ─────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('loading-overlay').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  renderMemberGrid();
+}
+
+function renderMemberGrid() {
+  const grid = document.getElementById('member-grid');
+  const members = appState?.members ? Object.entries(appState.members) : [];
+
+  // Admin tile first
+  let html = `<div class="member-tile" onclick="selectMember('${ADMIN_ID}','Admin','⚙️','Administrator')">
+    <span class="emoji">⚙️</span>
+    <div class="mname">Admin</div>
+    <div class="mrole">Systemadministrator</div>
+  </div>`;
+
+  if(members.length === 0) {
+    html += `<div style="grid-column:1/-1;color:var(--text2);font-size:0.78rem;padding:0.5rem;">
+      Noch keine Mitglieder. Admin → Mitglieder hinzufügen.
+    </div>`;
+  } else {
+    members.forEach(([id, m]) => {
+      html += `<div class="member-tile" onclick="selectMember('${id}','${m.name}','${m.emoji||'👤'}','${m.role||'Bürger/in'}')">
+        <span class="emoji">${m.emoji||'👤'}</span>
+        <div class="mname">${m.name}</div>
+        <div class="mrole">${m.role||'Bürger/in'}</div>
+      </div>`;
+    });
+  }
+  grid.innerHTML = html;
+}
+
+window.selectMember = function(id, name, emoji, role) {
+  selectedMemberId = id;
+  document.getElementById('step-select').style.display='none';
+  document.getElementById('step-pin').style.display='block';
+  document.getElementById('sel-emoji').textContent = emoji;
+  document.getElementById('sel-name').textContent = name;
+  document.getElementById('sel-role').textContent = role;
+  pinBuffer = "";
+  renderPinPad();
+};
+
+window.backToSelect = function() {
+  document.getElementById('step-select').style.display='block';
+  document.getElementById('step-pin').style.display='none';
+  document.getElementById('pin-error').textContent='';
+  pinBuffer='';
+};
+
+function renderPinPad() {
+  const dots = document.getElementById('pin-dots');
+  dots.innerHTML = [0,1,2,3].map(i =>
+    `<div class="pin-dot ${i < pinBuffer.length ? 'filled' : ''}" id="dot-${i}"></div>`
+  ).join('');
+
+  const pad = document.getElementById('pin-pad');
+  const nums = ['1','2','3','4','5','6','7','8','9','←','0','✓'];
+  pad.innerHTML = nums.map(n => `
+    <button class="pin-btn" onclick="pinInput('${n}')">${n}</button>
+  `).join('');
+}
+
+window.pinInput = function(val) {
+  if(val === '←') { pinBuffer = pinBuffer.slice(0,-1); }
+  else if(val === '✓') { checkPin(); return; }
+  else if(pinBuffer.length < 4) { pinBuffer += val; }
+  if(pinBuffer.length === 4) { checkPin(); return; }
+  renderPinPad();
+};
+
+async function checkPin() {
+  const err = document.getElementById('pin-error');
+
+  if(selectedMemberId === ADMIN_ID) {
+    if(pinBuffer === ADMIN_PIN) {
+      currentUser = { id:ADMIN_ID, name:'Admin', emoji:'⚙️', role:'Administrator', isAdmin:true, points:0 };
+      sessionStorage.setItem('fr_user', JSON.stringify(currentUser));
+      startApp();
+    } else {
+      err.textContent = 'Falscher PIN!';
+      pinBuffer='';
+      setTimeout(()=>renderPinPad(),400);
+    }
+    return;
+  }
+
+  const member = appState?.members?.[selectedMemberId];
+  if(!member) { err.textContent='Mitglied nicht gefunden.'; return; }
+
+  if(!member.pin) {
+    // First login – set pin
+    err.textContent = ''; 
+    // For first-time: allow any 4-digit pin (admin sets pins, so if no pin set, show message)
+    err.textContent = 'Kein PIN gesetzt. Bitte Admin kontaktieren.';
+    pinBuffer='';setTimeout(()=>renderPinPad(),400);
+    return;
+  }
+
+  if(pinBuffer === member.pin) {
+    currentUser = { ...member, id:selectedMemberId, isAdmin:false };
+    sessionStorage.setItem('fr_user', JSON.stringify(currentUser));
+    startApp();
+  } else {
+    err.textContent = 'Falscher PIN!';
+    pinBuffer='';
+    setTimeout(()=>renderPinPad(),400);
+  }
+}
+
+function startApp() {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  document.getElementById('app').style.flexDirection='column';
+
+  // Update topbar
+  document.getElementById('top-emoji').textContent = currentUser.emoji||'👤';
+  document.getElementById('top-name').textContent = currentUser.name;
+  document.getElementById('top-role').textContent = currentUser.isAdmin ? 'Administrator' : (currentUser.role||'Bürger/in');
+
+  // Show admin tab if admin
+  if(currentUser.isAdmin) {
+    document.getElementById('nav-admin').style.display='flex';
+  }
+
+  // Apply nav permissions
+  applyNavPermissions();
+  renderAll();
+}
+
+window.logout = function() {
+  sessionStorage.removeItem('fr_user');
+  currentUser = null;
+  showLogin();
+};
+
+// ── PERMISSIONS ───────────────────────────────────────────
+function hasPermission(perm) {
+  if(currentUser?.isAdmin) return true;
+  const offices = appState?.offices || DEFAULT_OFFICES;
+  const role = currentUser?.role || 'Bürger/in';
+  const office = offices[role];
+  if(!office) return false;
+  return (office.permissions || []).includes(perm);
+}
+
+function applyNavPermissions() {
+  // Everyone can see dashboard
+  // Nav items visibility based on role
+  // Everyone sees all tabs, but content inside is locked
+  // Exception: admin only for admin tab
+}
+
+function lockedSection(title) {
+  return `<div class="locked-section">
+    <div class="lock-icon">🔒</div>
+    <div class="lock-title">${title}</div>
+    <div class="lock-sub">Du hast keine Berechtigung für diesen Bereich.<br>
+    Kontaktiere den Haushaltspräsidenten oder Administrator.</div>
+  </div>`;
+}
+
+// ── RENDER ALL ────────────────────────────────────────────
+function isUserTyping() {
+  const active = document.activeElement;
+  return active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+}
+
+function renderAllSafe() {
+  // Never interrupt user while they are typing
+  if (isUserTyping()) return;
+  renderAll();
+}
+
+function renderAll() {
+  renderDashboard();
+  renderMembers();
+  renderParties();
+  renderVotes();
+  renderPranger();
+  renderProtokoll();
+  if(currentUser?.isAdmin) renderAdmin();
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function renderDashboard() {
+  const members = appState?.members ? Object.keys(appState.members).length : 0;
+  const votes = appState?.votes ? Object.keys(appState.votes).length : 0;
+  const prangerActive = appState?.pranger
+    ? Object.values(appState.pranger).filter(p=>!p.amnesty).length : 0;
+
+  document.getElementById('d-members').textContent = members;
+  document.getElementById('d-votes').textContent = votes;
+  document.getElementById('d-pranger').textContent = prangerActive;
+
+  const appName = appState?.settings?.appName || 'Familienrepublik';
+  document.querySelector('.topbar-logo').innerHTML = appName.includes(' ')
+    ? appName.replace(' ','<span>') + '</span>'
+    : `Familien<span>republik</span>`;
+
+  // Greeting
+  const hours = new Date().getHours();
+  const greet = hours < 12 ? 'Guten Morgen' : hours < 18 ? 'Guten Tag' : 'Guten Abend';
+  document.getElementById('dash-greeting').textContent = `${greet}, ${currentUser?.name}`;
+
+  // My active votes
+  const activeVotes = appState?.votes
+    ? Object.entries(appState.votes).filter(([,v]) => !v.closed) : [];
+
+  let dvHtml = '';
+  if(activeVotes.length > 0) {
+    dvHtml = `<div style="margin-bottom:1.2rem;">
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--gold);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;">🗳️ Aktive Abstimmungen</div>
+      ${activeVotes.map(([id,v]) => `
+        <div class="referendum-banner" onclick="showSection('abstimmung',document.querySelector('.nav-item:nth-child(4)'))">
+          <span class="ref-emoji">🗳️</span>
+          <div class="ref-type">${v.vtype==='simple'?'Einfache Mehrheit':v.vtype==='qualified'?'Qualif. Mehrheit':'Einstimmigkeit'}</div>
+          <div class="ref-title">${v.question}</div>
+          <div style="font-size:0.75rem;color:var(--text2);margin-top:0.4rem;">${Object.values(v.votes||{}).length}/7 Stimmen abgegeben</div>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+  document.getElementById('dash-myvotes').innerHTML = dvHtml;
+
+  // Recent activity
+  const logs = appState?.log ? Object.values(appState.log).slice(-5).reverse() : [];
+  document.getElementById('dash-activity').innerHTML = logs.length ? `
+    <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;">Letzte Aktivitäten</div>
+    <div class="card">
+      ${logs.map(l=>`
+        <div class="timeline-item">
+          <div class="t-dot">${l.icon||'📋'}</div>
+          <div><div class="t-title">${l.title}</div><div class="t-sub">${l.desc} · ${l.date}</div></div>
+        </div>
+      `).join('')}
+    </div>` : '';
+}
+
+// ── MEMBERS ───────────────────────────────────────────────
+function renderMembers() {
+  const members = appState?.members ? Object.entries(appState.members) : [];
+  const el = document.getElementById('members-list');
+
+  if(!hasPermission('mitglieder_view') && !currentUser?.isAdmin) {
+    el.innerHTML = lockedSection('Mitgliederverwaltung gesperrt');
+    document.getElementById('member-add-area').innerHTML = '';
+    return;
+  }
+
+  if(members.length === 0) {
+    el.innerHTML = `<div class="empty"><span class="empty-icon">👥</span>Noch keine Mitglieder.</div>`;
+  } else {
+    el.innerHTML = members.map(([id,m]) => `
+      <div class="member-row">
+        <div class="avatar">${m.emoji||'👤'}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="m-name">${m.name}</div>
+          <div class="m-role">${m.role||'Bürger/in'}</div>
+        </div>
+        <div class="score-tag">⭐ ${m.points||0}</div>
+        ${currentUser?.isAdmin ? `
+          <button class="btn btn-ghost btn-sm" onclick="editMemberPin('${id}','${m.name}')">🔑</button>
+          <button class="btn btn-ghost btn-sm" onclick="deleteMember('${id}')">✕</button>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+
+  // Add form (admin only)
+  if(!currentUser?.isAdmin) {
+    document.getElementById('member-add-area').innerHTML = '';
+    return;
+  }
+
+  const offices = Object.keys(appState?.offices || DEFAULT_OFFICES);
+  document.getElementById('member-add-area').innerHTML = `
+    <hr class="divider">
+    <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem;">Mitglied hinzufügen</div>
+    <div class="grid-2">
+      <div class="field"><label class="field-label">Name</label><input type="text" id="m-name" placeholder="z.B. Papa"></div>
+      <div class="field"><label class="field-label">Emoji</label><input type="text" id="m-emoji" placeholder="👨"></div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label class="field-label">Alter</label><input type="text" id="m-age" placeholder="z.B. 42"></div>
+      <div class="field"><label class="field-label">PIN (4-stellig)</label><input type="number" id="m-pin" placeholder="z.B. 1234" maxlength="4"></div>
+    </div>
+    <div class="field"><label class="field-label">Amt / Rolle</label>
+      <select id="m-role">${offices.map(o=>`<option>${o}</option>`).join('')}</select>
+    </div>
+    <button class="btn btn-gold" onclick="addMember()">+ Mitglied hinzufügen</button>
+  `;
+}
+
+window.addMember = async function() {
+  const name = document.getElementById('m-name').value.trim();
+  const pin = String(document.getElementById('m-pin').value).trim();
+  if(!name) return toast('Bitte Namen eingeben!');
+  if(pin.length !== 4 || isNaN(pin)) return toast('PIN muss 4-stellig sein!');
+
+  await dbPush('members', {
+    name,
+    emoji: document.getElementById('m-emoji').value.trim()||'👤',
+    age: document.getElementById('m-age').value.trim(),
+    role: document.getElementById('m-role').value,
+    pin,
+    points: 0
+  });
+  await logActivity('👥','Neues Mitglied',`${name} registriert`);
+  toast(`${name} hinzugefügt!`);
+};
+
+window.deleteMember = async function(id) {
+  const name = appState?.members?.[id]?.name || id;
+  await dbRemove(`members/${id}`);
+  await logActivity('✕','Mitglied entfernt', name);
+  toast(`${name} entfernt.`);
+};
+
+window.editMemberPin = async function(id, name) {
+  const newPin = prompt(`Neuen PIN für ${name} setzen (4 Ziffern):`);
+  if(!newPin || newPin.length!==4 || isNaN(newPin)) return toast('Ungültiger PIN.');
+  await dbUpdate(`members/${id}`, {pin: newPin});
+  toast(`PIN für ${name} gesetzt!`);
+};
+
+// ── PARTIES ───────────────────────────────────────────────
+function renderParties() {
+  const parties = appState?.parties ? Object.entries(appState.parties) : [];
+  const listEl = document.getElementById('parties-list');
+
+  if(parties.length === 0) {
+    listEl.innerHTML = `<div class="empty"><span class="empty-icon">🎭</span>Noch keine Parteien gegründet.</div>`;
+  } else {
+    listEl.innerHTML = parties.map(([id,p]) => `
+      <div class="party-card">
+        <div class="party-stripe" style="background:${p.color||'#c9a84c'}"></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-top:0.3rem;">
+          <div>
+            <div class="party-name">${p.name}</div>
+            <div class="party-slogan">${p.slogan}</div>
+          </div>
+          ${hasPermission('parteien_delete') ? `<button class="btn btn-ghost btn-sm" onclick="deleteParty('${id}')">✕</button>` : ''}
+        </div>
+        <div style="font-size:0.75rem;color:var(--text2);line-height:1.7;">${(p.demands||'').split(',').map(d=>`• ${d.trim()}`).join('<br>')}</div>
+      </div>
+    `).join('');
+  }
+
+  const addEl = document.getElementById('party-add-area');
+  if(!hasPermission('parteien_create')) {
+    addEl.innerHTML = lockedSection('Parteigründung gesperrt');
+    return;
+  }
+
+  addEl.innerHTML = `
+    <hr class="divider">
+    <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem;">Neue Partei gründen</div>
+    <div class="grid-2">
+      <div class="field"><label class="field-label">Parteiname</label><input type="text" id="p-name" placeholder="Partei der Gemütlichkeit"></div>
+      <div class="field"><label class="field-label">Farbe</label><input type="color" id="p-color" value="#c9a84c"></div>
+    </div>
+    <div class="field"><label class="field-label">Slogan</label><input type="text" id="p-slogan" placeholder="Gemeinsam stärker!"></div>
+    <div class="field"><label class="field-label">Forderungen (Komma-getrennt)</label><input type="text" id="p-demands" placeholder="Mehr Freizeit, Besseres Essen"></div>
+    <button class="btn btn-gold" onclick="addParty()">🎭 Partei gründen</button>
+  `;
+}
+
+window.addParty = async function() {
+  const name = document.getElementById('p-name').value.trim();
+  if(!name) return toast('Bitte Parteinamen eingeben!');
+  await dbPush('parties', {
+    name,
+    color: document.getElementById('p-color').value,
+    slogan: document.getElementById('p-slogan').value.trim()||'...',
+    demands: document.getElementById('p-demands').value.trim()||'...',
+    founder: currentUser?.name
+  });
+  await logActivity('🎭','Partei gegründet',`"${name}" von ${currentUser?.name}`);
+  toast(`Partei "${name}" gegründet!`);
+};
+
+window.deleteParty = async function(id) {
+  const name = appState?.parties?.[id]?.name || id;
+  await dbRemove(`parties/${id}`);
+  await logActivity('💔','Partei aufgelöst', name);
+  toast(`Partei aufgelöst.`);
+};
+
+// ── VOTES ─────────────────────────────────────────────────
+function renderVotes() {
+  const allVotes = appState?.votes ? Object.entries(appState.votes) : [];
+  const active = allVotes.filter(([,v])=>!v.closed);
+  const archived = allVotes.filter(([,v])=>v.closed);
+
+  const activeEl = document.getElementById('vote-active');
+  const createEl = document.getElementById('vote-create-area');
+  const archEl = document.getElementById('vote-archive');
+
+  // Active votes
+  if(active.length === 0) {
+    activeEl.innerHTML = `<div class="empty"><span class="empty-icon">🗳️</span>Keine laufenden Abstimmungen.</div>`;
+  } else {
+    activeEl.innerHTML = active.map(([id,v]) => {
+      const voteCounts = v.votes ? Object.values(v.votes) : [];
+      const totalVotes = voteCounts.length;
+      const tally = {};
+      v.options.forEach((o,i)=>tally[i]=0);
+      voteCounts.forEach(vote => { if(tally[vote]!==undefined) tally[vote]++; });
+      const myVote = v.votes?.[currentUser?.id];
+      const canVote = hasPermission('abstimmung_vote');
+      const canClose = hasPermission('abstimmung_close') || currentUser?.isAdmin;
+
+      return `<div class="card gold" style="margin-bottom:1rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.7rem;">
+          <div style="flex:1;">
+            <span class="badge badge-green" style="margin-bottom:0.4rem;">AKTIV</span>
+            <div class="card-title">${v.question}</div>
+            <div style="font-family:var(--font-mono);font-size:0.6rem;color:var(--text2);">${
+              v.vtype==='simple'?'Einfache Mehrheit (4/7)':v.vtype==='qualified'?'Qualifizierte Mehrheit (5/7)':'Einstimmigkeit (7/7)'
+            }</div>
+          </div>
+          <span class="score-tag">${totalVotes}/7</span>
+        </div>
+        <div style="margin-top:0.8rem;">
+          ${v.options.map((opt,i) => {
+            const pct = totalVotes > 0 ? Math.round(tally[i]/totalVotes*100) : 0;
+            const isMyVote = myVote === i;
+            return `<div class="vote-opt ${isMyVote?'voted':''}" onclick="${canVote&&myVote===undefined?`castVote('${id}',${i})`:''}">
+              <div class="vradio" style="${isMyVote?'':''}"></div>
+              <div style="flex:1;">
+                <div style="font-size:0.87rem;font-weight:500;">${opt}</div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--gold);"></div></div>
+              </div>
+              <span style="font-family:var(--font-mono);font-size:0.75rem;font-weight:600;">${tally[i]}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        ${myVote !== undefined ? `<div style="margin-top:0.6rem;font-size:0.72rem;color:var(--text2);">✓ Du hast abgestimmt.</div>` : ''}
+        ${canClose ? `<div class="btn-row"><button class="btn btn-primary btn-sm" onclick="closeVote('${id}')">Abstimmung schliessen</button></div>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  // Create form
+  if(!hasPermission('abstimmung_create')) {
+    createEl.innerHTML = lockedSection('Abstimmung erstellen gesperrt');
+  } else {
+    createEl.innerHTML = `
+      <hr class="divider">
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem;">Neue Abstimmung eröffnen</div>
+      <div class="field"><label class="field-label">Abstimmungsfrage</label>
+        <input type="text" id="v-question" placeholder="z.B. Sollen wir freitags Pizza essen?"></div>
+      <div class="field"><label class="field-label">Optionen (Komma-getrennt)</label>
+        <input type="text" id="v-options" placeholder="Ja, Nein, Enthalten"></div>
+      <div class="field"><label class="field-label">Mehrheitstyp</label>
+        <select id="v-type">
+          <option value="simple">Einfache Mehrheit (4/7)</option>
+          <option value="qualified">Qualifizierte Mehrheit (5/7)</option>
+          <option value="unanimous">Einstimmigkeit (7/7)</option>
+        </select>
+      </div>
+      <button class="btn btn-gold" onclick="createVote()">📣 Abstimmung eröffnen</button>
+    `;
+  }
+
+  // Archive
+  if(archived.length === 0) {
+    archEl.innerHTML = `<div style="color:var(--text2);font-size:0.82rem;">Noch keine abgeschlossenen Abstimmungen.</div>`;
+  } else {
+    archEl.innerHTML = archived.slice().reverse().map(([id,v]) => {
+      const voteCounts = v.votes ? Object.values(v.votes) : [];
+      const tally = {};
+      v.options.forEach((o,i)=>tally[i]=0);
+      voteCounts.forEach(vote => { if(tally[vote]!==undefined) tally[vote]++; });
+      const total = voteCounts.length;
+      const winnerIdx = v.options.reduce((best,_,i)=>tally[i]>tally[best]?i:best,0);
+      return `<div class="card" style="margin-bottom:0.6rem;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;">
+          <div class="card-title" style="font-size:0.9rem;">${v.question}</div>
+          <span class="badge badge-green">✓ ${v.options[winnerIdx]}</span>
+        </div>
+        <div style="margin-top:0.7rem;">
+          ${v.options.map((opt,i) => `
+            <div class="result-row">
+              <span class="result-label">${opt}</span>
+              <div class="result-track"><div class="result-fill" style="width:${total>0?Math.round(tally[i]/total*100):0}%;background:${i===winnerIdx?'var(--gold)':'var(--text2)'};">${tally[i]}</div></div>
+              <span class="result-count">${tally[i]}</span>
+            </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+window.castVote = async function(voteId, optIdx) {
+  if(!hasPermission('abstimmung_vote')) return toast('Keine Berechtigung!');
+  const existing = appState?.votes?.[voteId]?.votes?.[currentUser?.id];
+  if(existing !== undefined) return toast('Du hast bereits abgestimmt!');
+  await dbSet(`votes/${voteId}/votes/${currentUser?.id}`, optIdx);
+  await logActivity('🗳️','Stimme abgegeben', `${currentUser?.name} → ${appState?.votes?.[voteId]?.options?.[optIdx]}`);
+  toast('Stimme gezählt!');
+};
+
+window.createVote = async function() {
+  const q = document.getElementById('v-question').value.trim();
+  const opts = document.getElementById('v-options').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!q || opts.length < 2) return toast('Frage und mind. 2 Optionen!');
+  await dbPush('votes', {
+    question: q, options: opts, votes:{},
+    vtype: document.getElementById('v-type').value,
+    closed: false,
+    createdBy: currentUser?.name,
+    date: new Date().toLocaleDateString('de-CH')
+  });
+  await logActivity('📣','Abstimmung eröffnet', q);
+  toast('Abstimmung eröffnet!');
+  document.getElementById('v-question').value='';
+  document.getElementById('v-options').value='';
+};
+
+window.closeVote = async function(voteId) {
+  await dbUpdate(`votes/${voteId}`,{closed:true});
+  const v = appState?.votes?.[voteId];
+  await logActivity('✅','Abstimmung geschlossen', v?.question||voteId);
+  toast('Abstimmung geschlossen!');
+};
+
+// ── PRANGER ───────────────────────────────────────────────
+function renderPranger() {
+  const cases = appState?.pranger ? Object.entries(appState.pranger) : [];
+  const listEl = document.getElementById('pranger-list');
+  const addEl = document.getElementById('pranger-add-area');
+
+  if(cases.length === 0) {
+    listEl.innerHTML = `<div class="empty"><span class="empty-icon">🕊️</span>Keine aktiven Prangereinträge.</div>`;
+  } else {
+    listEl.innerHTML = cases.slice().reverse().map(([id,c]) => `
+      <div class="pranger-card ${c.amnesty?'amnestied':''}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.5rem;">
+          <div>
+            <span class="badge badge-red">${c.category}</span>
+            <div class="card-title" style="margin-top:0.3rem;">Angeklagt: ${c.accused}</div>
+          </div>
+          ${c.amnesty ? '<span class="badge badge-green">🕊️ Amnestie</span>' : ''}
+        </div>
+        <p style="font-size:0.83rem;line-height:1.7;color:var(--text2);margin-bottom:0.6rem;">${c.desc}</p>
+        <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text2);">Von: ${c.filer} · ${c.date}</div>
+        ${!c.amnesty && hasPermission('pranger_amnesty') ? `
+          <button class="btn btn-ghost btn-sm" style="margin-top:0.6rem;" onclick="grantAmnesty('${id}')">🕊️ Amnestie erteilen</button>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+
+  if(!hasPermission('pranger_create')) {
+    addEl.innerHTML = lockedSection('Anklage einreichen gesperrt');
+    return;
+  }
+
+  addEl.innerHTML = `
+    <hr class="divider">
+    <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:1rem;">Anklage einreichen</div>
+    <div class="grid-2">
+      <div class="field"><label class="field-label">Beschuldigte Person</label>
+        <input type="text" id="pr-accused" placeholder="Name"></div>
+      <div class="field"><label class="field-label">Kategorie</label>
+        <select id="pr-cat">
+          <option>Unordnung / Chaos</option>
+          <option>Versprechen gebrochen</option>
+          <option>Regelverletzung</option>
+          <option>Unfaire Behandlung</option>
+          <option>Ressourcenmissbrauch</option>
+          <option>Sonstiges</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label class="field-label">Tatbeschreibung</label>
+      <textarea id="pr-desc" placeholder="Was ist passiert?"></textarea></div>
+    <button class="btn btn-red" onclick="addPranger()">⚠️ Anklage einreichen</button>
+  `;
+}
+
+window.addPranger = async function() {
+  const accused = document.getElementById('pr-accused').value.trim();
+  const desc = document.getElementById('pr-desc').value.trim();
+  if(!accused||!desc) return toast('Bitte alle Felder ausfüllen!');
+  await dbPush('pranger', {
+    accused, desc,
+    category: document.getElementById('pr-cat').value,
+    filer: currentUser?.name,
+    amnesty: false,
+    date: new Date().toLocaleDateString('de-CH')
+  });
+  await logActivity('⚠️','Prangerfall',`${accused} von ${currentUser?.name} angeklagt`);
+  toast('Anklage eingereicht!');
+};
+
+window.grantAmnesty = async function(id) {
+  await dbUpdate(`pranger/${id}`,{amnesty:true, amnestyBy:currentUser?.name});
+  const name = appState?.pranger?.[id]?.accused || id;
+  await logActivity('🕊️','Amnestie',`Für ${name} erteilt von ${currentUser?.name}`);
+  toast('Amnestie erteilt. 🕊️');
+};
+
+// ── PROTOKOLL ─────────────────────────────────────────────
+function renderProtokoll() {
+  const canView = hasPermission('protokoll_view') || currentUser?.isAdmin;
+  const canPoints = hasPermission('protokoll_points') || currentUser?.isAdmin;
+
+  // Points table
+  const ptEl = document.getElementById('points-table-wrap');
+  const members = appState?.members ? Object.entries(appState.members) : [];
+  const sorted = [...members].sort((a,b)=>(b[1].points||0)-(a[1].points||0));
+  ptEl.innerHTML = `
+    <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.6rem;">Punktekonto</div>
+    <div class="card">
+      <table class="rtable">
+        <tr><th>#</th><th>Mitglied</th><th>Amt</th><th>Punkte</th></tr>
+        ${sorted.map((([id,m],i)=>`<tr>
+          <td style="font-family:var(--font-mono);">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</td>
+          <td>${m.emoji||'👤'} ${m.name}</td>
+          <td><span class="badge badge-gray">${m.role||'Bürger/in'}</span></td>
+          <td><span class="score-tag">⭐ ${m.points||0}</span></td>
+        </tr>`)).join('')}
+      </table>
+    </div>
+  `;
+
+  // Add points
+  const paEl = document.getElementById('points-add-area');
+  if(!canPoints) {
+    paEl.innerHTML = lockedSection('Punkte vergeben gesperrt');
+  } else {
+    const memberNames = members.map(([,m])=>m.name);
+    paEl.innerHTML = `
+      <div style="font-family:var(--font-mono);font-size:0.62rem;color:var(--text2);text-transform:uppercase;letter-spacing:2px;margin-bottom:0.8rem;margin-top:1rem;">Punkte vergeben</div>
+      <div class="grid-2">
+        <div class="field"><label class="field-label">Person</label>
+          <select id="pts-person">${members.map(([id,m])=>`<option value="${id}">${m.emoji||''} ${m.name}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label class="field-label">Punkte (+/-)</label>
+          <input type="number" id="pts-amount" placeholder="z.B. 3 oder -2"></div>
+      </div>
+      <div class="field"><label class="field-label">Grund</label>
+        <input type="text" id="pts-reason" placeholder="z.B. Zimmer aufgeräumt"></div>
+      <button class="btn btn-gold" onclick="addPoints()">⭐ Punkte buchen</button>
+    `;
+  }
+
+  // Activity log
+  const logs = appState?.log ? Object.values(appState.log).slice(-30).reverse() : [];
+  const logEl = document.getElementById('activity-log');
+  if(!canView && !currentUser?.isAdmin) {
+    logEl.innerHTML = lockedSection('Protokoll gesperrt');
+    return;
+  }
+  logEl.innerHTML = logs.length
+    ? `<div class="card">${logs.map(l=>`
+        <div class="timeline-item">
+          <div class="t-dot">${l.icon||'📋'}</div>
+          <div><div class="t-title">${l.title}</div><div class="t-sub">${l.desc} · ${l.date}</div></div>
+        </div>`).join('')}</div>`
+    : `<div style="color:var(--text2);font-size:0.82rem;">Noch keine Einträge.</div>`;
+}
+
+window.addPoints = async function() {
+  const memberId = document.getElementById('pts-person').value;
+  const amt = parseInt(document.getElementById('pts-amount').value);
+  const reason = document.getElementById('pts-reason').value.trim();
+  if(isNaN(amt)) return toast('Bitte Punktemenge eingeben!');
+  const current = appState?.members?.[memberId]?.points || 0;
+  await dbUpdate(`members/${memberId}`,{points: current+amt});
+  const name = appState?.members?.[memberId]?.name || memberId;
+  await logActivity('⭐',`${amt>0?'+':''}${amt} Punkte`,`${name}: ${reason||'—'}`);
+  toast(`${amt>0?'+':''}${amt} Punkte für ${name}!`);
+  document.getElementById('pts-amount').value='';
+  document.getElementById('pts-reason').value='';
+};
+
+// ── ADMIN PANEL ───────────────────────────────────────────
+function renderAdmin() {
+  if(!currentUser?.isAdmin) {
+    document.getElementById('admin-content').innerHTML = lockedSection('Nur für Administratoren');
+    return;
+  }
+
+  const offices = appState?.offices || DEFAULT_OFFICES;
+  const theme = appState?.settings?.theme || {};
+  const appName = appState?.settings?.appName || 'Familienrepublik';
+
+  document.getElementById('admin-content').innerHTML = `
+
+    <!-- DESIGN -->
+    <div class="admin-section-title">🎨 Design & Erscheinungsbild</div>
+    <div class="card" style="margin-bottom:1.2rem;">
+      <div class="field"><label class="field-label">App-Name</label>
+        <input type="text" id="adm-appname" value="${appName}"></div>
+      <div class="color-row">
+        <span class="color-label">Hauptfarbe (Gold)</span>
+        <input type="color" id="adm-gold" value="${theme.gold||'#c9a84c'}">
+        <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text2);">Akzentfarbe</span>
+      </div>
+      <div class="color-row">
+        <span class="color-label">Hintergrund</span>
+        <input type="color" id="adm-bg" value="${theme.bg||'#0f0f14'}">
+      </div>
+      <div class="color-row">
+        <span class="color-label">Oberfläche</span>
+        <input type="color" id="adm-surface" value="${theme.surface||'#17171f'}">
+      </div>
+      <button class="btn btn-gold" style="margin-top:0.5rem;" onclick="saveTheme()">💾 Design speichern</button>
+    </div>
+
+    <!-- ÄMTER -->
+    <div class="admin-section-title">🏛️ Ämter & Berechtigungen</div>
+    <div id="offices-list" style="margin-bottom:1rem;">
+      ${Object.entries(offices).map(([name, office]) => `
+        <div class="card" style="margin-bottom:0.6rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <div style="width:12px;height:12px;border-radius:50%;background:${office.color||'#888'};flex-shrink:0;"></div>
+              <strong style="font-size:0.88rem;">${name}</strong>
+            </div>
+            ${!DEFAULT_OFFICES[name] ? `<button class="btn btn-ghost btn-sm" onclick="deleteOffice('${name}')">✕</button>` : '<span class="badge badge-gray">Standard</span>'}
+          </div>
+          <div style="margin-bottom:0.5rem;">
+            ${Object.entries(ALL_PERMISSIONS).map(([key, label]) => `
+              <label style="display:inline-flex;align-items:center;gap:0.3rem;margin:0.15rem 0.3rem 0.15rem 0;cursor:pointer;">
+                <input type="checkbox" data-office="${name}" data-perm="${key}"
+                  ${(office.permissions||[]).includes(key)?'checked':''}
+                  onchange="togglePermission('${name}','${key}',this.checked)"
+                  style="accent-color:var(--gold);">
+                <span class="perm-tag">${label}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- NEW OFFICE -->
+    <div class="card" style="margin-bottom:1.2rem;">
+      <div style="font-family:var(--font-mono);font-size:0.65rem;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.8rem;">Neues Amt erstellen</div>
+      <div class="grid-2">
+        <div class="field"><label class="field-label">Amtsbezeichnung</label>
+          <input type="text" id="new-office-name" placeholder="z.B. Umweltminister/in"></div>
+        <div class="field"><label class="field-label">Farbe</label>
+          <input type="color" id="new-office-color" value="#c9a84c"></div>
+      </div>
+      <div style="margin-bottom:0.8rem;">
+        <label class="field-label">Berechtigungen</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+          ${Object.entries(ALL_PERMISSIONS).map(([key,label]) => `
+            <label style="display:inline-flex;align-items:center;gap:0.3rem;cursor:pointer;">
+              <input type="checkbox" class="new-perm" value="${key}" style="accent-color:var(--gold);">
+              <span class="perm-tag">${label}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="createOffice()">+ Amt erstellen</button>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div class="admin-section-title">⚠️ Datenverwaltung</div>
+    <div class="card red">
+      <p style="font-size:0.82rem;color:var(--text2);margin-bottom:0.8rem;line-height:1.7;">Gesamten Aktivitätenlog löschen. <strong style="color:var(--red);">Nicht rückgängig zu machen.</strong></p>
+      <button class="btn btn-red btn-sm" onclick="clearLog()">🗑️ Log leeren</button>
+    </div>
+  `;
+}
+
+window.saveTheme = async function() {
+  const theme = {
+    gold: document.getElementById('adm-gold').value,
+    bg: document.getElementById('adm-bg').value,
+    surface: document.getElementById('adm-surface').value,
+    accent: document.getElementById('adm-gold').value,
+  };
+  const appName = document.getElementById('adm-appname').value.trim() || 'Familienrepublik';
+  await dbUpdate('settings',{theme, appName});
+  applyTheme();
+  toast('Design gespeichert!');
+};
+
+window.togglePermission = async function(officeName, perm, enabled) {
+  const offices = {...(appState?.offices || DEFAULT_OFFICES)};
+  const office = {...offices[officeName]};
+  let perms = [...(office.permissions||[])];
+  if(enabled) { if(!perms.includes(perm)) perms.push(perm); }
+  else { perms = perms.filter(p=>p!==perm); }
+  office.permissions = perms;
+  await dbUpdate(`offices/${officeName}`, office);
+  toast(`Berechtigung "${ALL_PERMISSIONS[perm]}" ${enabled?'erteilt':'entzogen'}`);
+};
+
+window.createOffice = async function() {
+  const name = document.getElementById('new-office-name').value.trim();
+  if(!name) return toast('Amtsbezeichnung eingeben!');
+  const color = document.getElementById('new-office-color').value;
+  const perms = [...document.querySelectorAll('.new-perm:checked')].map(c=>c.value);
+  await dbSet(`offices/${name}`,{color, permissions:perms});
+  await logActivity('🏛️','Neues Amt',`"${name}" erstellt`);
+  toast(`Amt "${name}" erstellt!`);
+  document.getElementById('new-office-name').value='';
+};
+
+window.deleteOffice = async function(name) {
+  await dbRemove(`offices/${name}`);
+  await logActivity('✕','Amt gelöscht', name);
+  toast(`Amt "${name}" gelöscht.`);
+};
+
+window.clearLog = async function() {
+  await dbSet('log',{});
+  toast('Log geleert.');
+};
+
+// ── LOG ───────────────────────────────────────────────────
+async function logActivity(icon, title, desc) {
+  await dbPush('log', {
+    icon, title, desc,
+    date: new Date().toLocaleString('de-CH'),
+    by: currentUser?.name||'System'
+  });
+}
+
+// ── NAV ───────────────────────────────────────────────────
+window.showSection = function(id, el) {
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(`sec-${id}`).classList.add('active');
+  if(el) el.classList.add('active');
+  renderAll();
+};
+
+// ── TOAST ─────────────────────────────────────────────────
+window.toast = function(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+};
+
+// ── START ─────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
